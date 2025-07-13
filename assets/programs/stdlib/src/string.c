@@ -111,6 +111,15 @@ int strncmp(const char *str1, const char *str2, int n)
     return 0;
 }
 
+int strcmp(const char *s1, const char *s2)
+{
+    while (*s1 && (*s1 == *s2)) {
+        s1++;
+        s2++;
+    }
+    return *s1 - *s2;
+}
+
 char *strcpy(char *dest, const char *src)
 {
     char *res = dest;
@@ -138,6 +147,16 @@ char *strncpy(char *dest, const char *src, int count)
     }
 
     dest[i] = 0x00;
+    return dest;
+}
+
+char *strcat(char *dest, const char *src)
+{
+    char *ptr = dest + strlen(dest);
+    while (*src) {
+        *ptr++ = *src++;
+    }
+    *ptr = '\0';
     return dest;
 }
 

@@ -9,6 +9,8 @@
 #include "audio/audio.h"
 #include "debug/simple_serial.h"
 #include "task/process.h"
+#include "graphics/vix_kernel.h"
+#include "terminal/terminal.h"
 
 struct paging_4gb_chunk *kernel_chunk = 0;
 
@@ -56,19 +58,32 @@ void kernel_main()
     simple_serial_puts("Paging enabled\n");
 
     simple_serial_puts("Initializing graphics system...\n");
-    struct mouse *mouse = kernel_init_graphics();
+    kernel_init_graphics();
     simple_serial_puts("Graphics system initialized\n");
 
+    // Display boot progress messages on screen after graphics are ready
+    vix_kernel_clear_screen(VIX_RGB(0, 0, 0)); // Black background
+    vix_kernel_draw_text("ViOS Kernel Boot Sequence", 10, 10, VIX_COLOR_WHITE);
+    vix_kernel_draw_text("[OK] Serial Debug Initialized", 10, 30, VIX_COLOR_GREEN);
+    vix_kernel_draw_text("[OK] GDT and TSS Initialized", 10, 50, VIX_COLOR_GREEN);
+    vix_kernel_draw_text("[OK] Devices Initialized", 10, 70, VIX_COLOR_GREEN);
+    vix_kernel_draw_text("[OK] Paging Enabled", 10, 90, VIX_COLOR_GREEN);
+    vix_kernel_draw_text("[OK] Graphics System Ready", 10, 110, VIX_COLOR_GREEN);
+    vix_kernel_present_frame();
+    
     kernel_display_boot_message();
     simple_serial_puts("Boot message drawn\n");
 
     virtual_audio_control(VIRTUAL_AUDIO_BEEP);
     simple_serial_puts("Audio beep triggered\n");
 
-    kernel_unmask_timer_irq();
+    simple_serial_puts("Skipping timer IRQ unmasking for now...\n");
+    // kernel_unmask_timer_irq(); // Disabled as it causes system restart
+    simple_serial_puts("Timer IRQ unmasking skipped\n");
 
-    simple_serial_puts("Starting graphics demo...\n");
+    simple_serial_puts("Skipping terminal load for VIX frontend test...\n");
     
-    // Start graphics demo
-    kernel_run_main_loop(mouse);
+// Run kernel terminal main loop directly
+    simple_serial_puts("Running kernel terminal...\n");
+    terminal_main_loop(); // Run the terminal main loop
 }

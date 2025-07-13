@@ -6,9 +6,24 @@
 #include "../task/process.h"
 #include "../keyboard/keyboard.h"
 #include "../string/string.h"
+#include "../debug/simple_serial.h"
 
 void kernel_run_main_loop(struct mouse *mouse)
 {
+    // Debug information: Verify graphics initialization
+    simple_serial_puts("Initializing graphics...");
+    if (!graphics_initialize()) {
+        simple_serial_puts("Graphics initialization failed!");
+        return;
+    } else {
+        simple_serial_puts("Graphics initialized successfully.");
+    }
+
+    // Debug information: Display initial message
+    vix_kernel_clear_screen(VIX_COLOR_BLACK);
+    vix_kernel_draw_text("Starting Kernel-Level Terminal Rendering...", 50, 50, VIX_COLOR_WHITE);
+    vix_kernel_present_frame();
+
     // Get screen info using VIX
     struct vix_screen_info screen_info;
     vix_kernel_get_screen_info(&screen_info);

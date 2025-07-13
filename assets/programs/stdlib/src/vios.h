@@ -69,4 +69,12 @@ void vix_draw_text_scaled(const char *text, int x, int y, uint32_t color, int sc
 int vix_text_width(const char *text, int scale);
 int vix_text_height(int scale);
 
+// VIA (VIOS API) - Keyboard functions
+int via_keyboard_read(char *buffer, int buffer_size, int blocking);
+int via_keyboard_state(void);
+
+// VIA (VIOS API) - Sound functions
+void via_sound_play(uint32_t frequency, uint32_t duration);
+void via_sound_stop(void);
+
 #endif

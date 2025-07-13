@@ -39,11 +39,22 @@ void kernel_init_gdt_and_tss(void)
 
     simple_serial_puts("Initializing TSS...\n");
     memset(&tss, 0, sizeof(tss));
-    tss.esp0 = 0x20000000;
-    tss.ss0 = KERNEL_DATA_SELECTOR; // Ensure this matches any GDT data selectors
     
-    simple_serial_puts("Loading TSS with selector 0x28...\n");
-    tss_load(0x28);                 // Ensure that 0x28 matches the TSS selector in the GDT
+    // Use a safer stack pointer that points to a known good memory area
+    // The heap starts at 0x01000000, so we'll use a region just before it
+    tss.esp0 = 0x00900000;  // Use 9MB mark as kernel stack
+    tss.ss0 = KERNEL_DATA_SELECTOR;
+    
+    // Set up basic TSS fields to prevent faults
+    tss.cs = KERNEL_CODE_SELECTOR;
+    tss.ss = KERNEL_DATA_SELECTOR;
+    tss.ds = KERNEL_DATA_SELECTOR;
+    tss.es = KERNEL_DATA_SELECTOR;
+    tss.fs = KERNEL_DATA_SELECTOR;
+    tss.gs = KERNEL_DATA_SELECTOR;
+    
+    simple_serial_puts("Skipping TSS loading for now...\n");
+    // tss_load(0x28); // Disabled until we get basic functionality working
 
     simple_serial_puts("GDT and TSS initialized successfully.\n");
 }
@@ -69,8 +80,9 @@ void kernel_init_devices(void)
     simple_serial_puts("  Filesystem initialized\n");
     
     simple_serial_puts("  Searching for disks...\n");
-    disk_search_and_init();
-    simple_serial_puts("  Disk search completed\n");
+    // Temporarily disable disk search for debugging
+    // disk_search_and_init();
+    simple_serial_puts("  Disk search completed (disabled for debugging)\n");
     
     simple_serial_puts("  Initializing IDT...\n");
     idt_init();

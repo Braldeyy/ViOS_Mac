@@ -51,7 +51,8 @@ FILES = \
   ./build/math/fpu_math.o \
   ./build/debug/simple_serial.o \
   ./build/audio/audio.o \
-  ./build/audio/sb16.o
+  ./build/audio/sb16.o \
+  ./build/terminal/terminal.o
 
 INCLUDES = -I./src
 CFLAGS  = -std=gnu99 -Wall -Werror -O0 -g
@@ -151,7 +152,7 @@ user_other_programs:
 			for stdlib in $(STDLIBS); do \
 				if [ "$$dir" = "$$stdlib" ]; then skip=1; fi; \
 			done; \
-			if [ $$skip -eq 0 ]; then \
+			if [ $$skip -eq 0 ] && [ -f "$$dir/Makefile" ]; then \
 				echo "Building user program $$dir..."; \
 				$(MAKE) -C $$dir all || exit 1; \
 			fi; \

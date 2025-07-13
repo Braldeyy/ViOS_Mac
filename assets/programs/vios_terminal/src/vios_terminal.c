@@ -2,23 +2,7 @@
 #include "stdio.h"
 #include "string.h"
 
-// Simple string functions not available in stdlib
-int strcmp(const char *s1, const char *s2) {
-    while (*s1 && (*s1 == *s2)) {
-        s1++;
-        s2++;
-    }
-    return *s1 - *s2;
-}
-
-char *strcat(char *dest, const char *src) {
-    char *ptr = dest + strlen(dest);
-    while (*src) {
-        *ptr++ = *src++;
-    }
-    *ptr = '\0';
-    return dest;
-}
+// Using standard library string functions
 
 #define MAX_INPUT 256
 #define MAX_PROGRAMS 32

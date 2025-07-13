@@ -153,3 +153,29 @@ int vix_text_height(int scale)
     asm volatile("int $0x80" : "=a"(result) : "a"(23), "b"(scale) : "memory");
     return result;
 }
+
+// VIA (VIOS API) - Keyboard implementations
+int via_keyboard_read(char *buffer, int buffer_size, int blocking)
+{
+    int result;
+    asm volatile("int $0x80" : "=a"(result) : "a"(24), "b"(buffer), "c"(buffer_size), "d"(blocking) : "memory");
+    return result;
+}
+
+int via_keyboard_state(void)
+{
+    int result;
+    asm volatile("int $0x80" : "=a"(result) : "a"(25) : "memory");
+    return result;
+}
+
+// VIA (VIOS API) - Sound implementations
+void via_sound_play(uint32_t frequency, uint32_t duration)
+{
+    asm volatile("int $0x80" : : "a"(26), "b"(frequency), "c"(duration) : "memory");
+}
+
+void via_sound_stop(void)
+{
+    asm volatile("int $0x80" : : "a"(27) : "memory");
+}
