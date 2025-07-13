@@ -7,117 +7,190 @@
 #include "../keyboard/keyboard.h"
 #include "../string/string.h"
 #include "../debug/simple_serial.h"
+#include "../terminal/terminal.h"
+#include "../io/io.h"
+
+// Simple kernel terminal state
+static char terminal_buffer[80 * 25]; // 80 columns, 25 rows
+static char input_buffer[256];
+static int input_pos = 0;
+static int cursor_x = 0;
+static int cursor_y = 0;
+static int terminal_bg_color = 0x000000; // Black background
+
+void kernel_terminal_clear()
+{
+    for (int i = 0; i < 80 * 25; i++) {
+        terminal_buffer[i] = ' ';
+    }
+    cursor_x = 0;
+    cursor_y = 0;
+}
+
+void kernel_terminal_putchar(char c)
+{
+    if (c == '\n') {
+        cursor_x = 0;
+        cursor_y++;
+        if (cursor_y >= 25) {
+            // Scroll up
+            for (int i = 0; i < 80 * 24; i++) {
+                terminal_buffer[i] = terminal_buffer[i + 80];
+            }
+            for (int i = 80 * 24; i < 80 * 25; i++) {
+                terminal_buffer[i] = ' ';
+            }
+            cursor_y = 24;
+        }
+    } else if (c == '\b') {
+        if (cursor_x > 0) {
+            cursor_x--;
+            terminal_buffer[cursor_y * 80 + cursor_x] = ' ';
+        }
+    } else {
+        terminal_buffer[cursor_y * 80 + cursor_x] = c;
+        cursor_x++;
+        if (cursor_x >= 80) {
+            cursor_x = 0;
+            cursor_y++;
+            if (cursor_y >= 25) {
+                cursor_y = 24;
+                // Scroll logic here if needed
+            }
+        }
+    }
+}
+
+void kernel_terminal_print(const char* str)
+{
+    while (*str) {
+        kernel_terminal_putchar(*str);
+        str++;
+    }
+}
+
+void kernel_terminal_render()
+{
+    // Clear screen
+    vix_kernel_clear_screen(terminal_bg_color);
+    
+    // Draw terminal content
+    for (int y = 0; y < 25; y++) {
+        for (int x = 0; x < 80; x++) {
+            char c = terminal_buffer[y * 80 + x];
+            if (c != ' ') {
+                char str[2] = {c, '\0'};
+                vix_kernel_draw_text(str, x * 8, y * 16, VIX_COLOR_WHITE);
+            }
+        }
+    }
+    
+    // Draw cursor
+    vix_kernel_fill_rect(cursor_x * 8, cursor_y * 16, 8, 16, VIX_RGB(128, 128, 128));
+    
+    vix_kernel_present_frame();
+}
+
+void kernel_terminal_execute_command(const char* cmd)
+{
+    if (strncmp(cmd, "help", 4) == 0) {
+        kernel_terminal_print("Available commands:\n");
+        kernel_terminal_print("  help - Show this help\n");
+        kernel_terminal_print("  clear - Clear screen\n");
+        kernel_terminal_print("  echo <text> - Echo text\n");
+        kernel_terminal_print("  bgcolor <color> - Change background (red/green/blue/black)\n");
+    } else if (strncmp(cmd, "clear", 5) == 0) {
+        kernel_terminal_clear();
+    } else if (strncmp(cmd, "echo ", 5) == 0) {
+        kernel_terminal_print(cmd + 5);
+        kernel_terminal_print("\n");
+    } else if (strncmp(cmd, "bgcolor red", 11) == 0) {
+        terminal_bg_color = VIX_RGB(64, 0, 0);
+    } else if (strncmp(cmd, "bgcolor green", 13) == 0) {
+        terminal_bg_color = VIX_RGB(0, 64, 0);
+    } else if (strncmp(cmd, "bgcolor blue", 12) == 0) {
+        terminal_bg_color = VIX_RGB(0, 0, 64);
+    } else if (strncmp(cmd, "bgcolor black", 13) == 0) {
+        terminal_bg_color = 0x000000;
+    } else if (strlen(cmd) > 0) {
+        kernel_terminal_print("Unknown command: ");
+        kernel_terminal_print(cmd);
+        kernel_terminal_print("\n");
+    }
+}
 
 void kernel_run_main_loop(struct mouse *mouse)
 {
-    // Debug information: Verify graphics initialization
-    simple_serial_puts("Initializing graphics...");
-    if (!graphics_initialize()) {
-        simple_serial_puts("Graphics initialization failed!");
-        return;
-    } else {
-        simple_serial_puts("Graphics initialized successfully.");
-    }
-
-    // Debug information: Display initial message
-    vix_kernel_clear_screen(VIX_COLOR_BLACK);
-    vix_kernel_draw_text("Starting Kernel-Level Terminal Rendering...", 50, 50, VIX_COLOR_WHITE);
-    vix_kernel_present_frame();
-
-    // Get screen info using VIX
-    struct vix_screen_info screen_info;
-    vix_kernel_get_screen_info(&screen_info);
+    simple_serial_puts("Starting kernel terminal...\n");
     
-    int animation_counter = 0;
+    // Initialize terminal
+    kernel_terminal_clear();
+    kernel_terminal_print("ViOS Kernel Terminal\n");
+    kernel_terminal_print("Type 'help' for available commands.\n");
+    kernel_terminal_print("\n# ");
     
-    while (1)
-    {
-        // Clear screen to dark blue using VIX
-        vix_kernel_clear_screen(VIX_RGB(20, 20, 60));
+    input_pos = 0;
+    
+    while (1) {
+        kernel_terminal_render();
         
-        // Draw VIX title
-        vix_kernel_draw_text_scaled("VIX Graphics System Demo", 50, 20, VIX_COLOR_WHITE, 2);
-        vix_kernel_draw_text("Kernel-Level VIX Graphics API in Action", 50, 50, VIX_COLOR_CYAN);
+        // Simple keyboard polling (direct port access)
+        unsigned char scancode = 0;
         
-        // Draw screen info
-        char info_buffer[128];
-        // Simple string building since we don't have sprintf
-        info_buffer[0] = 'S';
-        info_buffer[1] = 'c';
-        info_buffer[2] = 'r';
-        info_buffer[3] = 'e';
-        info_buffer[4] = 'e';
-        info_buffer[5] = 'n';
-        info_buffer[6] = ':';
-        info_buffer[7] = ' ';
-        info_buffer[8] = '1';
-        info_buffer[9] = '0';
-        info_buffer[10] = '2';
-        info_buffer[11] = '4';
-        info_buffer[12] = 'x';
-        info_buffer[13] = '7';
-        info_buffer[14] = '6';
-        info_buffer[15] = '8';
-        info_buffer[16] = '\0';
-        vix_kernel_draw_text(info_buffer, 50, 80, VIX_COLOR_YELLOW);
-        
-        // Draw animated rectangles using VIX
-        int rect_x = 50 + (animation_counter % 200);
-        vix_kernel_fill_rect(rect_x, 120, 60, 40, VIX_COLOR_RED);
-        vix_kernel_draw_text("Red", rect_x + 20, 135, VIX_COLOR_WHITE);
-        
-        int rect_size = 20 + (animation_counter % 40);
-        vix_kernel_fill_rect(300, 120, rect_size, rect_size, VIX_COLOR_GREEN);
-        vix_kernel_draw_text("Green", 300, 175, VIX_COLOR_WHITE);
-        
-        // Draw animated circles using VIX
-        int circle_radius = 15 + (animation_counter % 20);
-        vix_kernel_fill_circle(100, 250, circle_radius, VIX_COLOR_YELLOW);
-        vix_kernel_draw_text("Yellow Circle", 60, 290, VIX_COLOR_WHITE);
-        
-        vix_kernel_fill_circle(250, 250, 25, VIX_COLOR_MAGENTA);
-        vix_kernel_draw_text("Magenta Circle", 210, 290, VIX_COLOR_WHITE);
-        
-        // Draw lines using VIX
-        vix_kernel_draw_line(50, 350, 400, 350, VIX_COLOR_CYAN);
-        vix_kernel_draw_line(225, 320, 225, 380, VIX_COLOR_CYAN);
-        vix_kernel_draw_text("VIX Lines", 260, 360, VIX_COLOR_WHITE);
-        
-        // Draw outline rectangles using VIX
-        vix_kernel_draw_rect(450, 120, 120, 80, VIX_COLOR_WHITE);
-        vix_kernel_draw_text("Outline", 490, 150, VIX_COLOR_WHITE);
-        vix_kernel_draw_text("Rectangle", 480, 165, VIX_COLOR_WHITE);
-        
-        // Draw scaling demonstration
-        vix_kernel_draw_text("Text Scaling:", 450, 220, VIX_COLOR_YELLOW);
-        vix_kernel_draw_text("Scale 1", 450, 240, VIX_COLOR_WHITE);
-        vix_kernel_draw_text_scaled("Scale 2", 450, 260, VIX_COLOR_GREEN, 2);
-        vix_kernel_draw_text_scaled("Scale 3", 450, 290, VIX_COLOR_CYAN, 3);
-        
-        // Draw pixel art section using VIX
-        vix_kernel_draw_text("Pixel Art:", 450, 350, VIX_COLOR_YELLOW);
-        for (int i = 0; i < 30; i++) {
-            for (int j = 0; j < 30; j++) {
-                uint32_t color = VIX_RGB((i * 8) % 256, (j * 8) % 256, ((i + j) * 5) % 256);
-                vix_kernel_draw_pixel(450 + i, 370 + j, color);
+        // Check if keyboard data is available
+        if ((inb(0x64) & 0x01)) {
+            scancode = inb(0x60);
+            
+            // Simple scancode to ASCII conversion (basic keys only)
+            char ascii = 0;
+            
+            // Handle key releases (ignore)
+            if (scancode & 0x80) {
+                continue;
+            }
+            
+            // Basic ASCII mapping for common keys
+            static char scancode_to_ascii[] = {
+                0, 0, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b',
+                '\t', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n',
+                0, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`',
+                0, '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0,
+                '*', 0, ' '
+            };
+            
+            if (scancode < sizeof(scancode_to_ascii)) {
+                ascii = scancode_to_ascii[scancode];
+            }
+            
+            if (ascii) {
+                if (ascii == '\n') {
+                    // Execute command
+                    input_buffer[input_pos] = '\0';
+                    kernel_terminal_print("\n");
+                    
+                    kernel_terminal_execute_command(input_buffer);
+                    
+                    // Reset for next command
+                    input_pos = 0;
+                    kernel_terminal_print("# ");
+                } else if (ascii == '\b') {
+                    // Backspace
+                    if (input_pos > 0) {
+                        input_pos--;
+                        kernel_terminal_putchar('\b');
+                    }
+                } else {
+                    // Add character to input buffer
+                    if (input_pos < 255) {
+                        input_buffer[input_pos] = ascii;
+                        input_pos++;
+                        kernel_terminal_putchar(ascii);
+                    }
+                }
             }
         }
         
-        // Draw mouse cursor using VIX
-        vix_kernel_fill_rect(mouse->x, mouse->y, 12, 12, VIX_COLOR_WHITE);
-        vix_kernel_fill_rect(mouse->x + 2, mouse->y + 2, 8, 8, VIX_COLOR_BLACK);
-        vix_kernel_draw_text("Mouse", mouse->x + 15, mouse->y, VIX_COLOR_WHITE);
-        
-        // Draw status info
-        vix_kernel_draw_text("ViOS VIX Graphics System - Kernel Level Demo", 50, screen_info.height - 40, VIX_COLOR_YELLOW);
-        vix_kernel_draw_text("All graphics rendered through VIX API", 50, screen_info.height - 20, VIX_RGB(150, 150, 150));
-        
-        // Present the frame using VIX
-        vix_kernel_present_frame();
-        
-        animation_counter++;
-        
-        // Simple frame delay
-        for (volatile int i = 0; i < 50000; i++);
+        // Small delay
+        for (volatile int i = 0; i < 10000; i++);
     }
 }

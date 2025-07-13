@@ -83,7 +83,12 @@ void kernel_main()
 
     simple_serial_puts("Skipping terminal load for VIX frontend test...\n");
     
-// Run kernel terminal main loop directly
-    simple_serial_puts("Running kernel terminal...\n");
-    terminal_main_loop(); // Run the terminal main loop
+// Keep the boot message visible for a moment
+    simple_serial_puts("Boot sequence complete - displaying for 3 seconds\n");
+    
+    // Wait 3 seconds to see the boot message
+    for (volatile int delay = 0; delay < 30000000; delay++);
+    
+    simple_serial_puts("Starting kernel main loop (VIX demo)...\n");
+    kernel_run_main_loop(0); // This should run the VIX graphics demo, no mouse for now
 }

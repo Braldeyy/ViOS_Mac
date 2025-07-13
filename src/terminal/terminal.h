@@ -35,6 +35,7 @@ typedef struct {
     int history_count;
     bool cursor_visible;
     uint32_t cursor_blink_counter;
+    uint32_t bg_color;
     bool initialized;
 } terminal_state_t;
 
@@ -59,8 +60,11 @@ void terminal_main_loop(void);
 void terminal_cmd_help(void);
 void terminal_cmd_clear(void);
 void terminal_cmd_info(void);
-void terminal_cmd_mem(void);
-void terminal_cmd_vix(const char* args);
 void terminal_cmd_echo(const char* args);
+void terminal_cmd_bgcolor(const char* color);
+void terminal_cmd_colors(void);
+void terminal_cmd_history(void);
+void terminal_cmd_vix(void);
+void terminal_cmd_mem(void);
 
 #endif // TERMINAL_H
