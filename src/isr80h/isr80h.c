@@ -13,6 +13,12 @@
 void *isr80h_command24_keyboard_read(struct interrupt_frame *frame);
 void *isr80h_command25_keyboard_state(struct interrupt_frame *frame);
 
+/**
+ * Registers all supported system commands and their handlers for interrupt 0x80h.
+ *
+ * This function binds each system command identifier to its corresponding handler function,
+ * enabling the kernel to dispatch system calls and graphics operations through the interrupt 0x80h interface.
+ */
 void isr80h_register_commands()
 {
     simple_serial_puts("Registering command 0\n");
