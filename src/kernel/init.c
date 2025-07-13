@@ -15,6 +15,7 @@
 #include "../isr80h/isr80h.h"
 #include "../panic/panic.h"
 #include "../graphics/graphics.h"
+#include "../graphics/vix_kernel.h"
 #include "../audio/audio.h"
 #include "../mouse/ps2_mouse.h"
 #include "../io/io.h"
@@ -112,9 +113,10 @@ struct mouse *kernel_init_graphics(void)
 
 void kernel_display_boot_message(void)
 {
-    ClearScreen(11, 25, 69);
-    DrawAtariString("ViOS Graphics System Initialized", 10, 10, 255, 255, 255, 1);
-    Flush();
+    vix_kernel_clear_screen(VIX_RGB(11, 25, 69));
+    vix_kernel_draw_text("ViOS VIX Graphics System Initialized", 10, 10, VIX_COLOR_WHITE);
+    vix_kernel_draw_text("VIX API Ready for User Programs", 10, 30, VIX_COLOR_CYAN);
+    vix_kernel_present_frame();
 }
 
 void kernel_unmask_timer_irq(void)

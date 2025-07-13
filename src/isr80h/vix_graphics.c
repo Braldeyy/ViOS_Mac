@@ -206,3 +206,93 @@ void *isr80h_command19_vix_fill_circle(struct interrupt_frame *frame)
     
     return 0;
 }
+
+void *isr80h_command20_vix_draw_text(struct interrupt_frame *frame)
+{
+    // Parameters: EBX = text (char*), ECX = x, EDX = y, ESI = color
+    char *text = (char *)frame->ebx;
+    int x = (int)frame->ecx;
+    int y = (int)frame->edx;
+    uint32_t rgb = (uint32_t)frame->esi;
+    
+    // Validate text pointer
+    if (!text) {
+        return (void *)-1;
+    }
+    
+    // Extract RGB components
+    uint8_t r = (rgb >> 16) & 0xFF;
+    uint8_t g = (rgb >> 8) & 0xFF;
+    uint8_t b = rgb & 0xFF;
+    
+    // Convert to graphics color and draw text
+    Color color = graphics_rgb_to_color(r, g, b);
+    GraphicsContext *ctx = graphics_get_context();
+    if (ctx && ctx->back_buffer) {
+        Point position = {x, y};
+        graphics_draw_text(ctx->back_buffer, text, position, color);
+    }
+    
+    return 0;
+}
+
+void *isr80h_command21_vix_draw_text_scaled(struct interrupt_frame *frame)
+{
+    // Parameters: EBX = text (char*), ECX = x, EDX = y, ESI = color, EDI = scale
+    char *text = (char *)frame->ebx;
+    int x = (int)frame->ecx;
+    int y = (int)frame->edx;
+    uint32_t rgb = (uint32_t)frame->esi;
+    int scale = (int)frame->edi;
+    
+    // Validate text pointer and scale
+    if (!text || scale <= 0) {
+        return (void *)-1;
+    }
+    
+    // Extract RGB components
+    uint8_t r = (rgb >> 16) & 0xFF;
+    uint8_t g = (rgb >> 8) & 0xFF;
+    uint8_t b = rgb & 0xFF;
+    
+    // Convert to graphics color and draw scaled text
+    Color color = graphics_rgb_to_color(r, g, b);
+    GraphicsContext *ctx = graphics_get_context();
+    if (ctx && ctx->back_buffer) {
+        Point position = {x, y};
+        graphics_draw_text_scaled(ctx->back_buffer, text, position, color, scale);
+    }
+    
+    return 0;
+}
+
+void *isr80h_command22_vix_text_width(struct interrupt_frame *frame)
+{
+    // Parameters: EBX = text (char*), ECX = scale
+    char *text = (char *)frame->ebx;
+    int scale = (int)frame->ecx;
+    
+    // Validate text pointer and scale
+    if (!text || scale <= 0) {
+        return (void *)-1;
+    }
+    
+    // Calculate text width
+    int width = graphics_text_width(text, scale);
+    return (void *)width;
+}
+
+void *isr80h_command23_vix_text_height(struct interrupt_frame *frame)
+{
+    // Parameters: EBX = scale
+    int scale = (int)frame->ebx;
+    
+    // Validate scale
+    if (scale <= 0) {
+        return (void *)-1;
+    }
+    
+    // Calculate text height
+    int height = graphics_text_height(scale);
+    return (void *)height;
+}

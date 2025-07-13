@@ -34,5 +34,9 @@ void *isr80h_command16_vix_get_screen_info(struct interrupt_frame *frame);
 void *isr80h_command17_vix_draw_line(struct interrupt_frame *frame);
 void *isr80h_command18_vix_draw_circle(struct interrupt_frame *frame);
 void *isr80h_command19_vix_fill_circle(struct interrupt_frame *frame);
+void *isr80h_command20_vix_draw_text(struct interrupt_frame *frame);
+void *isr80h_command21_vix_draw_text_scaled(struct interrupt_frame *frame);
+void *isr80h_command22_vix_text_width(struct interrupt_frame *frame);
+void *isr80h_command23_vix_text_height(struct interrupt_frame *frame);
 
 #endif // VIX_GRAPHICS_H

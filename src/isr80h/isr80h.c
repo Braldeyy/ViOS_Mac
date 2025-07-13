@@ -30,4 +30,8 @@ void isr80h_register_commands()
     isr80h_register_command(SYSTEM_COMMAND17_VIX_DRAW_LINE, isr80h_command17_vix_draw_line);
     isr80h_register_command(SYSTEM_COMMAND18_VIX_DRAW_CIRCLE, isr80h_command18_vix_draw_circle);
     isr80h_register_command(SYSTEM_COMMAND19_VIX_FILL_CIRCLE, isr80h_command19_vix_fill_circle);
+    isr80h_register_command(SYSTEM_COMMAND20_VIX_DRAW_TEXT, isr80h_command20_vix_draw_text);
+    isr80h_register_command(SYSTEM_COMMAND21_VIX_DRAW_TEXT_SCALED, isr80h_command21_vix_draw_text_scaled);
+    isr80h_register_command(SYSTEM_COMMAND22_VIX_TEXT_WIDTH, isr80h_command22_vix_text_width);
+    isr80h_register_command(SYSTEM_COMMAND23_VIX_TEXT_HEIGHT, isr80h_command23_vix_text_height);
 }

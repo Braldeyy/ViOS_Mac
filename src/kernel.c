@@ -8,6 +8,7 @@
 #include "config.h"
 #include "audio/audio.h"
 #include "debug/simple_serial.h"
+#include "task/process.h"
 
 struct paging_4gb_chunk *kernel_chunk = 0;
 
@@ -66,6 +67,8 @@ void kernel_main()
 
     kernel_unmask_timer_irq();
 
-    simple_serial_puts("Entering kernel loop...\n");
+    simple_serial_puts("Starting graphics demo...\n");
+    
+    // Start graphics demo
     kernel_run_main_loop(mouse);
 }
